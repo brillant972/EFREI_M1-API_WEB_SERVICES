@@ -5,6 +5,7 @@ import bodyParser from 'body-parser';
 import compression from 'compression';
 import cors from 'cors';
 import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 
 // Core
 import config from './config.mjs';
@@ -63,7 +64,18 @@ const Server = class Server {
 
   middleware() {
     this.app.use(compression());
-    this.app.use(cors());
+    this.app.use(cors({
+      origin: ['http://localhost:3000'],
+      methods: ['GET', 'POST', 'PUT', 'DELETE'],
+      credentials: true
+    }));
+    this.app.use(
+      rateLimit({
+        windowMs: 60 * 60 * 1000, // 1 heure
+        max: 100, // 100 requêtes par heure
+        message: { code: 429, message: 'Too many requests, plz try again later.' }
+      })
+    );
     this.app.use(bodyParser.urlencoded({ extended: true }));
     this.app.use(bodyParser.json());
   }
@@ -73,10 +85,20 @@ const Server = class Server {
     new routes.Albums(this.app, this.connect);
     new routes.Photos(this.app, this.connect);
 
+    // routes non trouvées
     this.app.use((req, res) => {
       res.status(404).json({
         code: 404,
         message: 'Not Found'
+      });
+    });
+
+    // erreurs globales
+    // eslint-disable-next-line no-unused-vars
+    this.app.use((err, req, res, _next) => {
+      res.status(err.status || 500).json({
+        code: err.status || 500,
+        message: err.message || 'Internal Server Error'
       });
     });
   }
@@ -92,7 +114,6 @@ const Server = class Server {
       this.security();
       this.middleware();
       this.routes();
-      this.app.listen(this.config.port);
     } catch (err) {
       console.error(`[ERROR] Server -> ${err}`);
     }

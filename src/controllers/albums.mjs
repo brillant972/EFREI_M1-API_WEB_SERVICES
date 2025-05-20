@@ -1,5 +1,6 @@
 import AlbumModel from '../models/album.mjs';
 import PhotoModel from '../models/photo.mjs';
+import { authenticateJWT } from '../middleware/auth.mjs';
 
 const Albums = class Albums {
   constructor(app, connect) {
@@ -10,7 +11,7 @@ const Albums = class Albums {
   }
 
   getById() {
-    this.app.get('/album/:id', async (req, res) => {
+    this.app.get('/album/:id', authenticateJWT, async (req, res) => {
       try {
         const album = await this.Album.findById(req.params.id).populate('photos');
         if (!album) return res.status(404).json({ code: 404, message: 'Album not found' });
@@ -22,7 +23,7 @@ const Albums = class Albums {
   }
 
   create() {
-    this.app.post('/album', async (req, res) => {
+    this.app.post('/album', authenticateJWT, async (req, res) => {
       try {
         const album = new this.Album(req.body);
         await album.save();
@@ -34,7 +35,7 @@ const Albums = class Albums {
   }
 
   update() {
-    this.app.put('/album/:id', async (req, res) => {
+    this.app.put('/album/:id', authenticateJWT, async (req, res) => {
       try {
         const album = await this.Album.findByIdAndUpdate(req.params.id, req.body, { new: true });
         if (!album) return res.status(404).json({ code: 404, message: 'Album not found' });
@@ -46,7 +47,7 @@ const Albums = class Albums {
   }
 
   delete() {
-    this.app.delete('/album/:id', async (req, res) => {
+    this.app.delete('/album/:id', authenticateJWT, async (req, res) => {
       try {
         const album = await this.Album.findByIdAndDelete(req.params.id);
         if (!album) return res.status(404).json({ code: 404, message: 'Album not found' });
@@ -60,7 +61,7 @@ const Albums = class Albums {
   }
 
   getAll() {
-    this.app.get('/albums', async (req, res) => {
+    this.app.get('/albums', authenticateJWT, async (req, res) => {
       try {
         const filter = req.query.title ? { title: new RegExp(req.query.title, 'i') } : {};
         const albums = await this.Album.find(filter).populate('photos');
