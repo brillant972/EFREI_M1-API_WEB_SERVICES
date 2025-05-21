@@ -10,6 +10,7 @@ import rateLimit from 'express-rate-limit';
 // Core
 import config from './config.mjs';
 import routes from './controllers/routes.mjs';
+import Pipeline from './controllers/pipeline.mjs';
 
 const Server = class Server {
   constructor() {
@@ -84,6 +85,7 @@ const Server = class Server {
     new routes.Users(this.app, this.connect);
     new routes.Albums(this.app, this.connect);
     new routes.Photos(this.app, this.connect);
+    new Pipeline(this.app);
 
     // routes non trouvées
     this.app.use((req, res) => {
